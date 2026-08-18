@@ -1,0 +1,162 @@
+/* @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap'); */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Playfair:ital,opsz,wght@0,5..1200,300..900;1,5..1200,300..900&display=swap');
+* {
+  font-family: 'Outfit', system-ui, sans-serif;
+}
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .calendar-page .icon-button { @apply rounded-md p-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600; }
+  .calendar-page .stat-blue { @apply border-blue-200 bg-blue-50 text-blue-700; }
+  .calendar-page .stat-indigo { @apply border-indigo-200 bg-indigo-50 text-indigo-700; }
+  .calendar-page .stat-green { @apply border-green-200 bg-green-50 text-green-700; }
+  .calendar-page .stat-slate { @apply border-slate-200 bg-slate-50 text-slate-500; }
+  .calendar-page .stat-red { @apply border-red-200 bg-red-50 text-red-600; }
+  .calendar-page .stat-purple { @apply border-purple-200 bg-purple-50 text-purple-700; }
+  .calendar-page .form-label { @apply grid gap-1.5 text-sm font-medium text-slate-700; }
+  .calendar-page .form-input { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100; }
+}
+
+.calendar-page .fc { --fc-border-color: #e2e8f0; --fc-page-bg-color: #fff; --fc-neutral-bg-color: #f8fafc; --fc-today-bg-color: #eff6ff; font-size: 14px; }
+.calendar-page .fc .fc-col-header-cell-cushion { padding: 12px 4px; color: #64748b; font-weight: 600; text-decoration: none; }
+.calendar-page .fc .fc-daygrid-day-number { padding: 9px; color: #0f172a; font-weight: 600; text-decoration: none; }
+.calendar-page .fc .fc-day-other .fc-daygrid-day-number { color: #94a3b8; }
+.calendar-page .fc .fc-daygrid-day-frame { min-height: 105px; }
+.calendar-page .fc .fc-day-today .fc-daygrid-day-number { color: #2563eb; }
+.calendar-page .fc .fc-event { border: 0; border-radius: 4px; padding: 2px 4px; font-weight: 600; }
+.calendar-page .fc .fc-list-event-title a, .calendar-page .fc .fc-list-event-time { color: #334155; text-decoration: none; }
+
+.expense-card { border-left-width: 4px; }
+.expense-card-blue { border-left-color: #3b82f6; }
+.expense-card-green { border-left-color: #22c55e; }
+.expense-card-purple { border-left-color: #a855f7; }
+.expense-card-orange { border-left-color: #f97316; }
+.expense-card-emerald { border-left-color: #10b981; }
+
+.money-pulse .money-panel { @apply flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm; border-top-width: 3px; }
+.money-pulse .money-icon { @apply rounded-md border border-slate-200 p-1.5 text-slate-400 transition hover:bg-slate-50 hover:text-slate-700; }
+
+.case-intelligence .ci-panel { @apply flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm; border-top-width: 3px; }
+.case-intelligence .ci-icon { @apply rounded-md border border-slate-200 p-1.5 text-slate-400 transition hover:bg-slate-50 hover:text-slate-700; }
+
+@layer base {
+  :root {
+    /* Brand: Deep Navy + Gold + Ivory */
+    --background: 40 33% 98%;
+    --foreground: 220 60% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 60% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 60% 12%;
+
+    --primary: 220 65% 14%;
+    --primary-foreground: 40 33% 98%;
+
+    --secondary: 220 30% 96%;
+    --secondary-foreground: 220 65% 14%;
+
+    --muted: 220 20% 95%;
+    --muted-foreground: 220 15% 40%;
+
+    --accent: 41 45% 53%;
+    --accent-foreground: 220 65% 14%;
+
+    --gold: 41 45% 53%;
+    --gold-foreground: 220 65% 14%;
+    --gold-soft: 41 60% 88%;
+
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 40 33% 98%;
+
+    --border: 220 20% 88%;
+    --input: 220 20% 88%;
+    --ring: 41 45% 53%;
+
+    --radius: 0.375rem;
+
+    /* Gradients & effects */
+    --gradient-hero: linear-gradient(135deg, hsl(220 70% 8% / 0.92), hsl(220 65% 14% / 0.78));
+    --gradient-gold: linear-gradient(135deg, hsl(41 50% 60%), hsl(41 45% 45%));
+    --gradient-dark: linear-gradient(180deg, hsl(220 65% 14%), hsl(220 70% 9%));
+    --shadow-elegant: 0 20px 60px -20px hsl(220 65% 14% / 0.25);
+    --shadow-gold: 0 10px 40px -12px hsl(41 45% 53% / 0.45);
+    --shadow-card: 0 4px 24px -8px hsl(220 65% 14% / 0.12);
+    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --sidebar-background: 220 65% 14%;
+    --sidebar-foreground: 40 33% 95%;
+    --sidebar-primary: 41 45% 53%;
+    --sidebar-primary-foreground: 220 65% 14%;
+    --sidebar-accent: 220 50% 20%;
+    --sidebar-accent-foreground: 40 33% 95%;
+    --sidebar-border: 220 50% 22%;
+    --sidebar-ring: 41 45% 53%;
+  }
+
+  .dark {
+    --background: 220 70% 7%;
+    --foreground: 40 33% 95%;
+    --card: 220 60% 11%;
+    --card-foreground: 40 33% 95%;
+    --popover: 220 60% 11%;
+    --popover-foreground: 40 33% 95%;
+    --primary: 41 45% 53%;
+    --primary-foreground: 220 65% 14%;
+    --secondary: 220 50% 16%;
+    --secondary-foreground: 40 33% 95%;
+    --muted: 220 50% 16%;
+    --muted-foreground: 220 15% 65%;
+    --accent: 41 45% 53%;
+    --accent-foreground: 220 65% 14%;
+    --border: 220 40% 20%;
+    --input: 220 40% 20%;
+    --ring: 41 45% 53%;
+  }
+}
+
+::-webkit-scrollbar{
+  display: none
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  h1, h2, h3, h4, h5 {
+    font-family: 'Playfair Display', Georgia, serif;
+    @apply tracking-tight;
+  }
+}
+
+@layer utilities {
+  .font-serif { font-family: 'Playfair Display', Georgia, serif; }
+  .text-gold { color: hsl(var(--gold)); }
+  .bg-gold { background-color: hsl(var(--gold)); }
+  .border-gold { border-color: hsl(var(--gold)); }
+  .gradient-gold-text {
+    background: var(--gradient-gold);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .container-pro { @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8; }
+  .gold-divider {
+    @apply inline-block w-16 h-[2px] bg-gold;
+  }
+  .animate-fade-up {
+    animation: fadeUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
