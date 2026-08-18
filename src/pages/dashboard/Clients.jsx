@@ -3,15 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { 
   Users, Plus, Loader2, AlertCircle, Download, Upload, 
   Trash2, ChevronLeft, ChevronRight, AlertTriangle, X,
-  UserCheck, Building2, UserPlus, TrendingUp
+  UserCheck, GraduationCap, UserPlus, TrendingUp, Eye, Edit
 } from "lucide-react"; 
 import * as XLSX from "xlsx";
-import axios from "axios";
 
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import ClientTable from "../../components/clients/ClientTable.jsx";
 import ClientSearch from "../../components/clients/ClientSearch.jsx";
 
+import axios from "axios";
 import {
   Card,
   CardContent,
@@ -21,55 +21,39 @@ import {
 import { Button } from "@/components/ui/button";
 
 const ITEMS_PER_PAGE = 6;
-// Update your API base URL according to your environment backend setup
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-const Clients = () => {
+const Students = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const [isImporting, setIsImporting] = useState(false);
   const [actionMessage, setActionMessage] = useState(null); 
   
-  // Real Backend Data State
-  const [clients, setClients] = useState([]);
+  const [students, setStudents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // Delete modal state
-  const [clientToDelete, setClientToDelete] = useState(null);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  // Fetch Clients on Mount
-  const fetchClients = async () => {
+  const fetchStudents = async () => {
     try {
       setIsLoading(true);
-      setError(null);
-      const response = await axios.get(`${API_BASE_URL}/clients`, {
-        withCredentials: true, // If using cookies/sessions
-      });
-      
-      // FIXED: Safely extract data array from backend response structure: { success: true, data: [...] }
-      const responseData = response.data;
-      const fetchedData = Array.isArray(responseData) 
-        ? responseData 
-        : responseData.data || responseData.clients || [];
-        
-      setClients(fetchedData);
+      const { data } = await axios.get(`${API_BASE}/students`);
+      setStudents(data.data || data || []);
     } catch (err) {
-      console.error("Error fetching clients:", err);
-      setError("Failed to load client database from server.");
+      console.error('Failed to fetch students:', err);
+      setActionMessage({ type: 'error', text: 'Failed to load students from server.' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchClients();
-  }, []);
+  useEffect(() => { fetchStudents(); }, []);
+
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Delete modal state
+  const [studentToDelete, setStudentToDelete] = useState(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Reset to page 1 whenever search query changes
   useEffect(() => {
@@ -77,58 +61,46 @@ const Clients = () => {
   }, [search]);
 
   // Data Normalization, Filtering & Sorting Pipeline
-  const filteredClients = useMemo(() => {
-    if (!clients || !Array.isArray(clients)) return [];
+  const filteredStudents = useMemo(() => {
+    if (!students || !Array.isArray(students)) return [];
     
     const searchLower = search.toLowerCase();
     
-    // Step 1: Normalize fields to match Mongoose schema properties (clientName, personalPhone, etc.)
-    const normalizedClients = clients.map((client) => {
-      const computedName = 
-        client.clientName || 
-        client.companyName || 
-        client.fullName || 
-        client.displayName || 
-        (client.firstName ? `${client.firstName} ${client.lastName || ''}`.trim() : null) || 
-        '-';
-        
-      const computedPhone = client.personalPhone || client.businessPhone || client.mobilePrimary || client.primaryPhone || client.mobile || '-';
-      const computedStatus = client.projectStatus || client.status || 'Active';
+    const normalizedStudents = students.map((student) => {
+      const computedName = student.studentName || student.fullName || '-';
+      const computedPhone = student.personalPhone || student.mobile || '-';
+      const computedStatus = student.projectStatus || student.status || 'Active';
 
       return {
-        ...client,
+        ...student,
         fullName: computedName,
         name: computedName,
         mobilePrimary: computedPhone,
-        mobile: computedPhone,
-        primaryPhone: computedPhone,
         status: computedStatus
       };
     });
     
-    // Step 2: Filter based on search
-    const filtered = normalizedClients.filter((client) => {
+    const filtered = normalizedStudents.filter((student) => {
       return (
-        client.fullName?.toLowerCase().includes(searchLower) ||
-        client.companyName?.toLowerCase().includes(searchLower) ||
-        client.mobilePrimary?.toLowerCase().includes(searchLower) ||
-        client.email?.toLowerCase().includes(searchLower) ||
-        client.clientId?.toLowerCase().includes(searchLower)
+        student.fullName?.toLowerCase().includes(searchLower) ||
+        student.enrollmentNo?.toLowerCase().includes(searchLower) ||
+        student.mobilePrimary?.toLowerCase().includes(searchLower) ||
+        student.email?.toLowerCase().includes(searchLower) ||
+        student.course?.toLowerCase().includes(searchLower)
       );
     });
 
-    // Step 3: Sorting based on creation date or ID
     return [...filtered].sort((a, b) => {
       const dateA = new Date(a.createdAt || 0);
       const dateB = new Date(b.createdAt || 0);
       return dateB - dateA; // Latest first
     });
-  }, [clients, search]);
+  }, [students, search]);
 
   // Dynamic Statistics Calculation for Top Cards
   const stats = useMemo(() => {
-    if (!clients || clients.length === 0) {
-      return { total: 0, active: 0, corporate: 0, individual: 0, newThisMonth: 0 };
+    if (!students || students.length === 0) {
+      return { total: 0, active: 0, mca: 0, otherCourses: 0, newThisMonth: 0 };
     }
 
     const now = new Date();
@@ -136,27 +108,25 @@ const Clients = () => {
     const currentYear = now.getFullYear();
 
     let active = 0;
-    let corporate = 0;
-    let individual = 0;
+    let mca = 0;
+    let otherCourses = 0;
     let newThisMonth = 0;
 
-    clients.forEach((client) => {
-      const statusValue = client.projectStatus || client.status || 'Active';
-      if (statusValue.toLowerCase() === 'active' || statusValue.toLowerCase() === 'ongoing') {
+    students.forEach((student) => {
+      const statusValue = student.projectStatus || student.status || 'Active';
+      if (statusValue.toLowerCase() === 'active') {
         active++;
       }
 
-      // Client Type / Company check
-      const type = (client.clientType || '').toLowerCase();
-      if (type.includes('corporate') || type.includes('company') || client.companyName) {
-        corporate++;
+      const course = (student.course || '').toLowerCase();
+      if (course.includes('mca') || course.includes('master of computer')) {
+        mca++;
       } else {
-        individual++;
+        otherCourses++;
       }
 
-      // Onboarding Date check (This Month)
-      if (client.createdAt || client.onboardingDate) {
-        const createdDate = new Date(client.createdAt || client.onboardingDate);
+      if (student.createdAt || student.admissionDate) {
+        const createdDate = new Date(student.createdAt || student.admissionDate);
         if (createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear) {
           newThisMonth++;
         }
@@ -164,92 +134,85 @@ const Clients = () => {
     });
 
     return {
-      total: clients.length,
+      total: students.length,
       active,
-      corporate,
-      individual,
+      mca,
+      otherCourses,
       newThisMonth
     };
-  }, [clients]);
+  }, [students]);
 
   // Pagination slicing (6 items per page)
-  const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE) || 1;
-  const paginatedClients = useMemo(() => {
+  const totalPages = Math.ceil(filteredStudents.length / ITEMS_PER_PAGE) || 1;
+  const paginatedStudents = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredClients.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredClients, currentPage]);
+    return filteredStudents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredStudents, currentPage]);
 
-  // ==================== EDIT HANDLER ====================
-  const handleEditClient = (client) => {
-    const targetId = client._id || client.id;
-    navigate(`/dashboard/client/edit/${targetId}`);
+  // ==================== ACTIONS ====================
+  const handleViewStudent = (student) => {
+    const targetId = student._id || student.id;
+    navigate(`/dashboard/students/${targetId}`);
   };
 
-  // ==================== DELETE HANDLER (API INTEGRATED) ====================
-  const handleInitiateDelete = (clientOrId) => {
+  const handleEditStudent = (student) => {
+    const targetId = student._id || student.id;
+    navigate(`/dashboard/student/edit/${targetId}`);
+  };
+
+  const handleInitiateDelete = (studentOrId) => {
     setActionMessage(null);
-    if (typeof clientOrId === "object" && clientOrId !== null) {
-      setClientToDelete(clientOrId);
+    if (typeof studentOrId === "object" && studentOrId !== null) {
+      setStudentToDelete(studentOrId);
     } else {
-      const target = filteredClients.find(
-        (c) => c._id === clientOrId || c.id === clientOrId || c.clientId === clientOrId
+      const target = filteredStudents.find(
+        (s) => s._id === studentOrId || s.id === studentOrId
       );
-      setClientToDelete(target || { _id: clientOrId, fullName: "Selected Client" });
+      setStudentToDelete(target || { _id: studentOrId, studentName: "Selected Student" });
     }
     setIsDeleteOpen(true);
   };
 
   const handleConfirmDelete = async () => {
-    if (!clientToDelete) return;
+    if (!studentToDelete) return;
+    setIsDeleting(true);
+    const targetId = studentToDelete._id || studentToDelete.id;
     try {
-      setIsDeleting(true);
-      const targetId = clientToDelete._id || clientToDelete.id;
-      
-      await axios.delete(`${API_BASE_URL}/clients/${targetId}`, {
-        withCredentials: true,
-      });
-      
-      setClients(prev => prev.filter(c => (c._id !== targetId && c.id !== targetId)));
-      
-      setIsDeleteOpen(false);
-      setClientToDelete(null);
-      setActionMessage({ type: "success", text: "Client record successfully deleted." });
+      await axios.delete(`${API_BASE}/students/${targetId}`);
+      setStudents(prev => prev.filter(s => s._id !== targetId && s.id !== targetId));
+      setActionMessage({ type: 'success', text: 'Student record successfully deleted.' });
     } catch (err) {
-      console.error("Delete error:", err);
-      setActionMessage({ type: "error", text: err.response?.data?.message || "Failed to delete client record." });
+      setActionMessage({ type: 'error', text: 'Failed to delete student.' });
     } finally {
+      setIsDeleteOpen(false);
+      setStudentToDelete(null);
       setIsDeleting(false);
     }
   };
 
   // ==================== EXPORT TO EXCEL ====================
   const handleExportExcel = () => {
-    if (!filteredClients || filteredClients.length === 0) return;
+    if (!filteredStudents || filteredStudents.length === 0) return;
 
-    const dataToExport = filteredClients.map((client) => ({
-      "Company Name": client.companyName || "",
-      "Client Name": client.clientName || "",
-      "Personal Phone": client.personalPhone || "",
-      "Business Phone": client.businessPhone || "",
-      "Email Address": client.email || "",
-      "Website URL": client.websiteUrl || "",
-      "Industry Type": client.industryType || "",
-      "Primary Service": client.primaryService || "",
-      "Project Status": client.projectStatus || "",
-      "Lead Source": client.leadSource || "",
-      "Account Manager": client.assignedAccountManager || "",
-      "Onboarding Notes": client.onboardingNotes || "",
-      "Created At": client.createdAt ? client.createdAt.slice(0, 10) : ""
+    const dataToExport = filteredStudents.map((student) => ({
+      "Enrollment No": student.enrollmentNo || "",
+      "Student Name": student.studentName || "",
+      "Personal Phone": student.personalPhone || "",
+      "Email Address": student.email || "",
+      "Course": student.course || "",
+      "Semester": student.semester || "",
+      "Status": student.projectStatus || "",
+      "Admission Date": student.admissionDate || ""
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Clients Database");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Students Database");
 
-    XLSX.writeFile(workbook, `Consolidated_Clients_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(workbook, `Students_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
-  // ==================== EXCEL IMPORT API INTEGRATION ====================
+  // ==================== EXCEL IMPORT LOCAL ====================
   const handleImportExcel = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -258,7 +221,7 @@ const Clients = () => {
     setActionMessage(null);
     const reader = new FileReader();
     
-    reader.onload = async (event) => {
+    reader.onload = (event) => {
       try {
         const bstr = event.target.result;
         const workbook = XLSX.read(bstr, { type: "binary" });
@@ -274,41 +237,27 @@ const Clients = () => {
           return;
         }
 
-        const sanitizedClients = importedData.map((row) => ({
-          companyName: row["Company Name"] || row["companyName"] || "",
-          clientName: row["Client Name"] || row["clientName"] || "",
+        const sanitizedStudents = importedData.map((row, index) => ({
+          _id: `imported_${Date.now()}_${index}`,
+          enrollmentNo: row["Enrollment No"] || row["enrollmentNo"] || `ENR${Math.floor(1000 + Math.random() * 9000)}`,
+          studentName: row["Student Name"] || row["studentName"] || "Unknown Student",
           personalPhone: row["Personal Phone"] ? row["Personal Phone"].toString() : "",
-          businessPhone: row["Business Phone"] ? row["Business Phone"].toString() : "",
           email: row["Email Address"] || row["email"] || "",
-          websiteUrl: row["Website URL"] || row["websiteUrl"] || "",
-          industryType: row["Industry Type"] || row["industryType"] || "",
-          primaryService: row["Primary Service"] || row["primaryService"] || "",
-          projectStatus: row["Project Status"] || row["projectStatus"] || "Active",
-          leadSource: row["Lead Source"] || row["leadSource"] || "",
-          assignedAccountManager: row["Account Manager"] || row["assignedAccountManager"] || "",
-          onboardingNotes: row["Onboarding Notes"] || row["onboardingNotes"] || ""
+          course: row["Course"] || row["course"] || "MCA",
+          semester: row["Semester"] || row["semester"] || "1st Semester",
+          projectStatus: row["Status"] || row["projectStatus"] || "Active",
+          admissionDate: new Date().toISOString().split('T')[0],
+          createdAt: new Date().toISOString()
         }));
 
-        // Loop and post to create individual clients since bulk endpoint might not be set up
-        const createdClients = [];
-        for (const clientData of sanitizedClients) {
-          const res = await axios.post(`${API_BASE_URL}/clients`, clientData, {
-            withCredentials: true,
-          });
-          if (res.data && res.data.data) {
-            createdClients.push(res.data.data);
-          }
-        }
-
-        setClients(prev => [...createdClients, ...prev]);
-        
+        setStudents(prev => [...sanitizedStudents, ...prev]);
         setActionMessage({ 
           type: "success", 
-          text: `Successfully imported clients from Excel!` 
+          text: `Successfully imported ${sanitizedStudents.length} student records from Excel!` 
         });
       } catch (err) {
         console.error("Import error:", err);
-        setActionMessage({ type: "error", text: err.response?.data?.message || "An error occurred while uploading the Excel file." });
+        setActionMessage({ type: "error", text: "An error occurred while uploading the Excel file." });
       } finally {
         setIsImporting(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -325,67 +274,19 @@ const Clients = () => {
     }
   };
 
-  // ==================== UI-MATCHED SKELETON LOADER ====================
-  if (isLoading) {
-    return (
-      <DashboardLayout title="Clients">
-        <div className="flex flex-col gap-6 w-full animate-pulse">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-6 rounded-xl border border-slate-200/80 shadow-sm">
-            <div className="space-y-2">
-              <div className="h-7 w-48 bg-slate-200 rounded-md"></div>
-              <div className="h-4 w-36 bg-slate-100 rounded-md"></div>
-            </div>
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-              <div className="h-10 w-full sm:w-64 bg-slate-200 rounded-lg"></div>
-              <div className="h-10 w-32 bg-slate-200 rounded-lg"></div>
-              <div className="h-10 w-32 bg-slate-200 rounded-lg"></div>
-              <div className="h-10 w-32 bg-slate-200 rounded-lg"></div>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-card border p-5 rounded-xl space-y-3 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="h-4 w-24 bg-slate-200 rounded"></div>
-                  <div className="h-9 w-9 bg-slate-200 rounded-lg"></div>
-                </div>
-                <div className="h-8 w-16 bg-slate-200 rounded"></div>
-                <div className="h-3 w-32 bg-slate-100 rounded"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <DashboardLayout title="Clients">
-        <div className="flex flex-col items-center justify-center h-[60vh] text-destructive">
-          <AlertCircle className="h-8 w-8 mb-4 text-red-500" />
-          <p className="text-sm font-medium">{error}</p>
-          <Button onClick={fetchClients} className="mt-4" variant="outline">
-            Try Refreshing Again
-          </Button>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
-    <DashboardLayout title="Clients">
+    <DashboardLayout title="Students">
       <div className="flex flex-col gap-6 w-full animate-in fade-in duration-300">
         
         {/* Header & Controls Bar */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-6 rounded-xl border shadow-sm">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <Users className="h-6 w-6 text-primary" />
-              Client Management
+              <GraduationCap className="h-6 w-6 text-primary" />
+              Student Management
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Showing <span className="font-semibold text-foreground">{paginatedClients.length}</span> of <span className="font-semibold text-foreground">{filteredClients.length}</span> filtered clients ({clients?.length || 0} total)
+              Showing <span className="font-semibold text-foreground">{paginatedStudents.length}</span> of <span className="font-semibold text-foreground">{filteredStudents.length}</span> filtered students ({students?.length || 0} total)
             </p>
           </div>
           
@@ -423,18 +324,18 @@ const Clients = () => {
             <Button
               onClick={handleExportExcel}
               variant="outline"
-              disabled={filteredClients.length === 0 || isImporting}
+              disabled={filteredStudents.length === 0 || isImporting}
               className="w-full sm:w-auto flex items-center gap-2 shadow-sm transition-all hover:bg-accent rounded-lg"
             >
               <Download className="h-4 w-4" /> Export Excel
             </Button>
 
             <Button 
-              onClick={() => navigate("/dashboard/client")}
+              onClick={() => navigate("/dashboard/student")}
               disabled={isImporting}
               className="w-full sm:w-auto flex items-center gap-2 shadow-sm transition-all hover:shadow-md rounded-lg"
             >
-              <Plus className="h-4 w-4" /> Add Client
+              <Plus className="h-4 w-4" /> Add Student
             </Button>
           </div>
         </div>
@@ -443,7 +344,7 @@ const Clients = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border shadow-sm rounded-xl hover:border-slate-300 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Clients</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
               <div className="p-2 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
                 <Users className="h-4 w-4" />
               </div>
@@ -452,14 +353,14 @@ const Clients = () => {
               <div className="text-2xl font-bold text-foreground">{stats.total}</div>
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                 <TrendingUp className="h-3 w-3 text-emerald-500" />
-                All onboarded clients
+                Enrolled student records
               </p>
             </CardContent>
           </Card>
 
           <Card className="border shadow-sm rounded-xl hover:border-slate-300 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Active Accounts</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Active Students</CardTitle>
               <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
                 <UserCheck className="h-4 w-4" />
               </div>
@@ -467,24 +368,24 @@ const Clients = () => {
             <CardContent>
               <div className="text-2xl font-bold text-emerald-600">{stats.active}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                {((stats.active / (stats.total || 1)) * 100).toFixed(0)}% of total clients active
+                {((stats.active / (stats.total || 1)) * 100).toFixed(0)}% of total students active
               </p>
             </CardContent>
           </Card>
 
           <Card className="border shadow-sm rounded-xl hover:border-slate-300 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Corporate / Indv.</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">MCA / Other Courses</CardTitle>
               <div className="p-2 rounded-xl bg-purple-50 text-purple-600 border border-purple-100">
-                <Building2 className="h-4 w-4" />
+                <GraduationCap className="h-4 w-4" />
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">
-                {stats.corporate} <span className="text-sm font-normal text-muted-foreground">/ {stats.individual}</span>
+                {stats.mca} <span className="text-sm font-normal text-muted-foreground">/ {stats.otherCourses}</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Companies vs Individual clients
+                MCA degree vs other programs
               </p>
             </CardContent>
           </Card>
@@ -499,7 +400,7 @@ const Clients = () => {
             <CardContent>
               <div className="text-2xl font-bold text-foreground">{stats.newThisMonth}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Added in current month
+                Admitted in current month
               </p>
             </CardContent>
           </Card>
@@ -522,28 +423,29 @@ const Clients = () => {
           </div>
         )}
 
-        {/* Clients Table Card */}
+        {/* Students Table Card */}
         <Card className="border shadow-sm rounded-xl overflow-hidden">
           <CardContent className="p-0">
-            {filteredClients.length > 0 ? (
+            {filteredStudents.length > 0 ? (
               <ClientTable 
-                clients={paginatedClients} 
+                clients={paginatedStudents} 
                 navigate={navigate}
-                onEdit={handleEditClient}
+                onView={handleViewStudent}
+                onEdit={handleEditStudent}
                 onDelete={handleInitiateDelete}
               />
             ) : (
               <div className="p-12 text-center text-muted-foreground flex flex-col items-center justify-center">
                 <Users className="h-12 w-12 mb-4 text-muted" strokeWidth={1} />
-                <p className="text-lg font-medium text-foreground">No clients found</p>
-                <p className="text-sm mt-1">Try adjusting your search query or add a new client.</p>
+                <p className="text-lg font-medium text-foreground">No students found</p>
+                <p className="text-sm mt-1">Try adjusting your search query or add a new student.</p>
               </div>
             )}
           </CardContent>
         </Card>
 
         {/* CENTERED ROUNDED PAGINATION CONTROLS */}
-        {filteredClients.length > 0 && totalPages > 1 && (
+        {filteredStudents.length > 0 && totalPages > 1 && (
           <div className="flex items-center justify-center pt-2 pb-4">
             <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border shadow-sm">
               <Button
@@ -592,7 +494,7 @@ const Clients = () => {
       </div>
 
       {/* DELETE CONFIRMATION MODAL POPUP */}
-      {isDeleteOpen && clientToDelete && (
+      {isDeleteOpen && studentToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
             <div className="flex items-start gap-4">
@@ -601,20 +503,20 @@ const Clients = () => {
               </div>
               <div className="flex flex-col space-y-1">
                 <h3 className="text-lg font-bold text-foreground">
-                  Delete Client Record?
+                  Delete Student Record?
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Are you sure you want to delete <span className="font-semibold text-foreground">{clientToDelete.clientName || clientToDelete.companyName || "this client"}</span>? This action cannot be undone.
+                  Are you sure you want to delete <span className="font-semibold text-foreground">{studentToDelete.studentName || "this student"}</span>? This action cannot be undone.
                 </p>
               </div>
             </div>
 
             <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
               <p className="text-xs font-bold text-slate-800 truncate">
-                {clientToDelete.clientName || clientToDelete.companyName || "Selected Client"}
+                {studentToDelete.studentName || "Selected Student"}
               </p>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                ID: <span className="font-mono text-slate-700">{clientToDelete._id || "N/A"}</span>
+                Enrollment No: <span className="font-mono text-slate-700">{studentToDelete.enrollmentNo || "N/A"}</span>
               </p>
             </div>
 
@@ -624,7 +526,7 @@ const Clients = () => {
                 disabled={isDeleting}
                 onClick={() => {
                   setIsDeleteOpen(false);
-                  setClientToDelete(null);
+                  setStudentToDelete(null);
                 }}
                 className="px-4 py-2.5 text-sm font-semibold rounded-xl border border-border text-foreground hover:bg-muted transition disabled:opacity-50"
               >
@@ -654,4 +556,4 @@ const Clients = () => {
   );
 };
 
-export default Clients;
+export default Students;

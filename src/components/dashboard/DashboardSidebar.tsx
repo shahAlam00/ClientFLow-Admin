@@ -88,13 +88,13 @@ const items = [
     ]
   },
   {
-    title: "CLIENTS",
+    title: "STUDENTS",
     icon: Users,
     isDropdown: true,
-    dropdownKey: "client",
+    dropdownKey: "students",
     children: [
-      { title: "Add Client", url: "/dashboard/client", icon: UserPlus, end: true },
-      { title: "All Clients", url: "/dashboard/clients", icon: Users, end: true },
+      { title: "Add Student", url: "/dashboard/student", icon: UserPlus, end: true },
+      { title: "All Students", url: "/dashboard/students", icon: Users, end: true },
       // { title: "Referrers", url: "/dashboard/referrers", icon: ClipboardCheck, end: true },
       // { title: "Case Management", url: "/dashboard/case-status", icon: BriefcaseBusiness },
     ]
@@ -113,7 +113,7 @@ const items = [
   //   ]
   // },
   {
-    title: "CLIENT DOCUMENTS",
+    title: "STUDENT DOCUMENTS",
     icon: Files,
     isDropdown: true,
     dropdownKey: "documents",
